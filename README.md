@@ -1,11 +1,9 @@
 ### Hi there 👋
 
-![Snake animation](https://github.com/rubemruarllen-mcd/rubemruarllen-mcd/blob/output/github-contribution-grid-snake.svg)
-
 <div>
 <a href="https://github.com/rubemruarllen-mcd">
-<img height="180em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=rubemruarllen-mcd&layout=compact&langs_count=7&theme=merko"/>
-<img height="180em" src="https://github-readme-stats.vercel.app/api?username=rubemruarllen-mcd&show_icons=true&theme=merko&include_all_commits=true&count_private=true"/>
+<img height="170em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=rubemruarllen-mcd&layout=compact&langs_count=7&theme=merko"/>
+<img height="170em" src="https://github-readme-stats.vercel.app/api?username=rubemruarllen-mcd&show_icons=true&theme=merko&include_all_commits=true&count_private=true"/>
 </div>
 
 [![Top Langs](https://github-readme-stats.vercel.app/api/top-langs/?username=rubemruarllen-mcd&layout=compact)](https://github.com/rubemruarllen-mcd/github-readme-stats)
