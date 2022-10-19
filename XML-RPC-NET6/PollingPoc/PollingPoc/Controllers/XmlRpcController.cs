@@ -170,6 +170,7 @@ namespace PollingPoc.Controllers
                         if (!alredyNotified)
                         {
                             _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(subject: "PocReport", message: "UPDATED-A0");
+                            alredyNotified = true;
                         }
                     }
                     _stldParams.CheckPoint = newPeaceStld.Attributes["checkPoint"]!.Value;
