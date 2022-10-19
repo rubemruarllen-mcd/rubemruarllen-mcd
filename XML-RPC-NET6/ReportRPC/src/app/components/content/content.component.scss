@@ -1,0 +1,120 @@
+.content{
+    display: flex;
+    float: left;
+    width: 97%;
+    background-color: white;
+    height: 91vh;
+    margin-left: 1.5%;
+    margin-top: 1.5%;
+    border-radius: 30px;
+    box-shadow: 9px 13px 15px 10px rgb(77 77 77);
+}
+
+.p{
+    text-align: center;
+    vertical-align: middle;
+    width: 100%;
+}
+
+.container{
+
+    width: 112%;
+    margin: 23px;
+    display: inline-grid;
+}
+
+.reportReq{
+    margin: auto;
+    width: 50%;
+    border: 3px solid rgba(180, 180, 180, 0.678);
+    padding: 10px;
+}
+
+.select{
+    margin: auto;
+    width: 50%;
+    padding: 10px;
+}
+
+.h4{
+    font: 400 24px/32px Roboto, "Helvetica Neue", sans-serif;
+    letter-spacing: normal;
+    margin: 0 0 16px;
+    height: -14px;
+    position: absolute;
+}
+
+.btn{
+    position: absolute;
+    right: 40vw;
+    top: 18vh;
+}
+
+.reportRes{
+margin: auto;
+width: 90%;
+border: 3px solid rgba(180, 180, 180, 0.678);
+padding: 10px;
+height: 60vh;
+overflow-y: scroll;
+}
+
+.spinner{
+    position: absolute;
+    right: 38.8%;
+    top: 15.5%;
+}
+
+.moreContent{
+        position: absolute;
+    right: 4vw;
+    bottom: 1.5vh;
+    color: white;
+    animation-name: content;
+    animation-duration: 2s;
+}
+
+.updating{
+    position: absolute;
+    top: 29vh;
+    left: 32vw;
+    font-size: 3vh;
+    color: white;
+    animation-name: updating;
+    animation-duration: 2s;
+    animation-iteration-count: 100;
+}
+
+.updated{
+    position: absolute;
+    top: 29vh;
+    left: 32vw;
+    font-size: 3vh;
+    color: green;
+}
+
+@keyframes updating {
+    0%   {color: red;}
+    25%   {color: white;}
+    50%   {color: red;}
+    75%   {color: white;}
+    100%   {color: red;}
+  }
+
+
+@keyframes content {
+    0%   {color: green;}
+    25%   {color: white;}
+    35%   {color: green;}
+    50%   {color: white;}
+    55%   {color: green;}
+    100%   {color: white;}
+  }
+
+
+  .obtainedReport{
+    position: absolute;
+    bottom: 2vh;
+    left: 44%;
+    color: green;
+  }

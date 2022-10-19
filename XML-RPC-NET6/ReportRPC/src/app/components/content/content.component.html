@@ -1,0 +1,101 @@
+<div class="content">
+    <div class="container">
+        <h1 class="h4">STLD Report</h1>
+        <div class="select">
+            <h4>Select the behavior</h4>
+            <p class="p">
+                <mat-form-field appearance="fill">
+                    <mat-label>Report behavior</mat-label>
+                    <select matNativeControl required #report>
+                        <option value="full">Get Full Report</option>
+                        <option value="real">Realtime Report</option>
+                    </select>
+
+                </mat-form-field>
+
+
+
+            </p>
+            <div class="spinner" *ngIf="requestRunning">
+                <mat-spinner></mat-spinner>
+            </div>
+            <div class="btn"><button mat-fab aria-label="Example icon button with a home icon"
+                    (click)="onSelected(report.value)">
+                    <mat-icon>done</mat-icon>
+                </button></div>
+
+
+
+        </div>
+        <mat-divider></mat-divider>
+        <div class="reportReq" *ngIf="selectedV === 'full' && hasRes == false">
+            <form class="form" [formGroup]="angForm" novalidate>
+                <p class="p">
+                    <mat-form-field appearance="outline">
+                        <mat-label>BusinessDay</mat-label>
+                        <input matInput placeholder="businessDay" formControlName="businessDay" type="text">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>CheckPoint</mat-label>
+                        <input matInput placeholder="checkPoint" formControlName="checkPoint" type="text">
+                    </mat-form-field>
+                </p>
+                <p class="p">
+                    <mat-form-field appearance="outline">
+                        <mat-label>CypherKey</mat-label>
+                        <input matInput placeholder="cypherKey" formControlName="cypherKey" type="text">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>DataType</mat-label>
+                        <input matInput placeholder="datatype" formControlName="datatype" type="text">
+                    </mat-form-field>
+                </p>
+                <p class="p">
+                    <mat-form-field appearance="outline">
+                        <mat-label>PII Mask Id Type</mat-label>
+                        <input matInput placeholder="piiMaskIdType" formControlName="piiMaskIdType" type="text">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>PII Mask Type</mat-label>
+                        <input matInput placeholder="piiMaskType" formControlName="piiMaskType" type="text">
+                    </mat-form-field>
+                </p>
+                <p class="p">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Pos List</mat-label>
+                        <input matInput placeholder="posList" formControlName="posList" type="text">
+                    </mat-form-field>
+                    <mat-form-field appearance="outline">
+                        <mat-label>Record Id</mat-label>
+                        <input matInput placeholder="recordId" formControlName="recordId" type="text">
+                    </mat-form-field>
+                </p>
+                <p class="p">
+                    <mat-form-field appearance="outline">
+                        <mat-label>Max Events</mat-label>
+                        <input matInput placeholder="maxEvents" formControlName="maxEvents" type="text">
+                    </mat-form-field>
+                </p>
+
+                <p class="p"><button mat-raised-button color="Request" (click)="request()">Request</button></p>
+
+            </form>
+        </div>
+        <div class="reportReq" *ngIf="selectedV === 'real' && hasRes == false ">
+            <h1>Realtime report</h1>
+            <p class="p"><button mat-raised-button color="Request" (click)="watch()">Request</button></p>
+        </div>
+        <div class="reportRes" *ngIf="hasRes" style="white-space: pre-wrap">{{rpc}}
+            <div class="moreContent" *ngIf="moreContent">Recived more content!</div>
+            <div class="obtainedReport" *ngIf="gotFullReport">The STLD report was obtained successfully!!!</div>
+            <div class="updated" *ngIf="updated">The report is updated, waiting for more events</div>
+            <div class="updating" *ngIf="!updated">Updating the report. wait while the report is updated</div>
+
+        </div>
+
+
+    </div>
+    <!-- <div>
+        {{rpc}}
+    </div> -->
+</div>

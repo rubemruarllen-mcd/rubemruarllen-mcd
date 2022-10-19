@@ -5,25 +5,33 @@ using Refit;
 using System.ComponentModel.DataAnnotations;
 using System.Xml;
 using PollingPoc.Domain.Converters;
+using Swashbuckle.AspNetCore.Filters;
+using PollingPoc.Swagger.Examples;
+using PollingPoc.Services;
+using PollingPoc.Domain.Models;
 
 namespace PollingPoc.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
-    public class XmlRpcController : Controller
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}")]
+    public class XmlRpcController : ControllerBase
     {
 
 
         private readonly IXmlRPC _xmlRpc;
+        private readonly IMessageBrokerFactory _messageBrokerFactory;
 
-        public XmlRpcController(IXmlRPC xmlRpc)
+
+        public XmlRpcController(IXmlRPC xmlRpc, IMessageBrokerFactory messageBrokerFactory)
         {
             _xmlRpc = xmlRpc;
+            _messageBrokerFactory = messageBrokerFactory;
         }
 
         private static readonly StldParams _stldParams = new StldParams()
         {
-            CheckPoint = "",
+            CheckPoint = "0",
             CypherKey = "",
             DataType = "STLD",
             PIIMaskIdType = "0",
@@ -32,33 +40,102 @@ namespace PollingPoc.Controllers
             RecordId = ""
         };
 
+        //[HttpPost(Name = "FullReport")]
+        //public ActionResult<MethodResponse> Report([FromBody] StldParams stldParams, [Required][FromHeader] DateTime BusinessDay , [FromHeader] bool useDefaultParams = true)
+        //{
+        //    //var result = new MethodResponse();
+        //    var parameters = stldParams;
+        //    if (useDefaultParams)
+        //        parameters = _stldParams;
 
 
+        //   var result = _xmlRpc.GetSTLDReport(DateOnly.FromDateTime(BusinessDay), parameters);
 
-        [HttpPost(Name = "Report")]
-        public ActionResult<MethodResponse> Report([FromBody] StldParams stldParams, [Required][FromHeader] DateTime BusinessDay , [FromHeader] bool useDefaultParams = true)
+
+        //    return result.Result;
+        //}
+
+        [HttpPost]
+        [Route("StldReport")]
+        [SwaggerRequestExample(typeof(StldParams), typeof(StldParamsRequestExample))]
+        public async Task<ActionResult<string>> StldReportX([Required][FromHeader] DateTime businessDay, [FromBody] StldParams stldParams)
         {
-            //var result = new MethodResponse();
-            var parameters = stldParams;
-            if (useDefaultParams)
-                parameters = _stldParams;
 
-
-           var result = _xmlRpc.GetSTLDReport(DateOnly.FromDateTime(BusinessDay), parameters);
-
-
-            return result.Result;
-        }
-
-        [HttpGet(Name = "GetStldReport")]
-        public async Task<ActionResult<object>> StldReport( [FromHeader] DateTime BusinessDay)
-        {
-            _stldParams.MaxEvents = "10";
-            _stldParams.CheckPoint = "0";
-            var result = await _xmlRpc.GetSTLDReportXml(DateOnly.FromDateTime(DateTime.Today), _stldParams);
+            var result = await _xmlRpc.GetSTLDReportXml(DateOnly.FromDateTime(businessDay), stldParams);
             var error = new { CheckPoint = "" };
             var r = new[] { error }.ToList();
             r.Remove(error);
+
+            var xml = result.XmlToString(1);
+
+            _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(message: xml);
+
+
+
+            var tld = result.SelectSingleNode("methodResponse/params/param/value/struct/member/value/base64/TLD");
+
+            if (tld == null)
+                return "Stld is null";
+
+            var hasMoreContent =
+               tld.Attributes["hasMoreContent"]!.Value == "true";
+            stldParams.CheckPoint = tld.Attributes["checkPoint"]!.Value;
+           
+            while (hasMoreContent)
+            {
+                try
+                {
+                    var update = await _xmlRpc.GetSTLDReportXml(DateOnly.FromDateTime(DateTime.Today), stldParams);
+                    var newPeaceStld =
+                        update.SelectSingleNode("methodResponse/params/param/value/struct/member/value/base64/TLD");
+                    hasMoreContent = newPeaceStld.Attributes["hasMoreContent"]!.Value == "true";
+                    stldParams.CheckPoint = newPeaceStld.Attributes["checkPoint"]!.Value;
+                    var nodes = newPeaceStld.SelectNodes("Node");
+                    foreach (var node in nodes)
+                    {
+                        var xmlNode = (XmlNode)node;
+                        var nodeId = xmlNode.Attributes["id"].Value;
+                        var events = xmlNode.SelectNodes("Event");
+                        if (events.Count > 0)
+                        {
+                            var up = tld.SelectSingleNode($"Node[@id='{nodeId}']");
+                            foreach (var eventX in events)
+                            {
+                                var sigleEvent = (XmlNode)eventX;
+                                //necessary for crossing XmlDocument contexts
+                                var importNode = up.OwnerDocument.ImportNode(sigleEvent, true);
+                                
+                                up.AppendChild(importNode);
+                            }
+                            _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(subject: "PocReport", message: up.XmlToString(1));
+                        }
+
+                    }
+                }
+                catch (Exception exception)
+                {
+                    r.Add(new { CheckPoint = stldParams.CheckPoint });
+                    stldParams.CheckPoint = (Int32.Parse(stldParams.CheckPoint) + 10).ToString();
+                }
+            }
+
+            return tld.XmlToString(1);
+        }
+
+
+        [HttpGet]
+        [Route("StldReportReal")]
+        [SwaggerRequestExample(typeof(StldParams), typeof(StldParamsRequestExample))]
+        public async Task<ActionResult<object>> StldReportReal()
+        {
+            var businessDay = DateTime.Now;
+            _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(message: "G");
+            _stldParams.MaxEvents = "10";
+            var result = await _xmlRpc.GetSTLDReportXml(DateOnly.FromDateTime(businessDay), _stldParams);
+            var error = new { CheckPoint = "" };
+            var r = new[] { error }.ToList();
+            r.Remove(error);
+            var alredyNotified = false;
 
             var tld = result.SelectSingleNode("methodResponse/params/param/value/struct/member/value/base64/TLD");
 
@@ -66,16 +143,22 @@ namespace PollingPoc.Controllers
                tld.Attributes["hasMoreContent"]!.Value == "true";
             _stldParams.CheckPoint = tld.Attributes["checkPoint"]!.Value;
 
-            while (hasMoreContent)
+            while (true)
             {
-
-
                 try
                 {
                     var update = await _xmlRpc.GetSTLDReportXml(DateOnly.FromDateTime(DateTime.Today), _stldParams);
                     var newPeaceStld =
                         update.SelectSingleNode("methodResponse/params/param/value/struct/member/value/base64/TLD");
                     hasMoreContent = newPeaceStld.Attributes["hasMoreContent"]!.Value == "true";
+                    if (!hasMoreContent)
+                    {
+                        _stldParams.MaxEvents = "1";
+                        if (!alredyNotified)
+                        {
+                            _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(subject: "PocReport", message: "UPDATED-A0");
+                        }
+                    }
                     _stldParams.CheckPoint = newPeaceStld.Attributes["checkPoint"]!.Value;
                     var nodes = newPeaceStld.SelectNodes("Node");
                     foreach (var node in nodes)
@@ -91,6 +174,7 @@ namespace PollingPoc.Controllers
                                 var sigleEvent = (XmlNode)eventX;
                                 //necessary for crossing XmlDocument contexts
                                 var importNode = up.OwnerDocument.ImportNode(sigleEvent, true);
+                                _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(subject: "PocReport", message: sigleEvent.XmlToString(1));
                                 up.AppendChild(importNode);
                             }
                         }
@@ -99,11 +183,10 @@ namespace PollingPoc.Controllers
                 }
                 catch (Exception exception)
                 {
-                    r.Add(new{ CheckPoint = _stldParams.CheckPoint});
-                    _stldParams.CheckPoint = (Int32.Parse(_stldParams.CheckPoint) +10).ToString();
+                    r.Add(new { CheckPoint = _stldParams.CheckPoint });
+                    _stldParams.CheckPoint = (Int32.Parse(_stldParams.CheckPoint) + 10).ToString();
                 }
             }
-
 
             return new { Errors = r, TLD = tld.XmlToString(1) };
         }
