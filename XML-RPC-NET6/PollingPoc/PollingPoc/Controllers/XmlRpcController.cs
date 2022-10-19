@@ -85,11 +85,17 @@ namespace PollingPoc.Controllers
             {
                 try
                 {
-                    var update = await _xmlRpc.GetSTLDReportXml(DateOnly.FromDateTime(DateTime.Today), stldParams);
+                    var update = await _xmlRpc.GetSTLDReportXml(DateOnly.FromDateTime(businessDay), stldParams);
                     var newPeaceStld =
                         update.SelectSingleNode("methodResponse/params/param/value/struct/member/value/base64/TLD");
+                    if (Int32.Parse(stldParams.CheckPoint) > 2500)
+                    {
+                        var ok = 0;
+                    }
                     hasMoreContent = newPeaceStld.Attributes["hasMoreContent"]!.Value == "true";
                     stldParams.CheckPoint = newPeaceStld.Attributes["checkPoint"]!.Value;
+
+                    _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(subject: "PocReport", message: "A0CHECKPOINT:" + stldParams.CheckPoint);
                     var nodes = newPeaceStld.SelectNodes("Node");
                     foreach (var node in nodes)
                     {
@@ -116,8 +122,15 @@ namespace PollingPoc.Controllers
                 {
                     r.Add(new { CheckPoint = stldParams.CheckPoint });
                     stldParams.CheckPoint = (Int32.Parse(stldParams.CheckPoint) + 10).ToString();
+                    if (r.Count() > 20)
+                    {
+                        break;
+                    }
+                    _messageBrokerFactory.GetCommunicationServices(CommunicationService.NatsService).Publish(subject: "PocReport", message: "ERROR-TLD-CHECKPOINT:"+ stldParams.CheckPoint);
                 }
             }
+
+
 
             return tld.XmlToString(1);
         }

@@ -38,21 +38,33 @@ export class ContentComponent implements OnInit {
 
     
     this.rpcM.subscribe(re=>{
+      let result:string = re;
+      let print = true;
       if(this.watchB){
-        let result:string = re;
+        
         if(result.includes("UPDATED-A0")){
           this.updated=true;
           this.rpc = "waiting new events";
         }
         else if(this.updated){
           this.rpc = "--------------------NEW EVENT ------------------------"+'\n'+re+'\n'+"-----------------Waiting new events------------------";
+          print =false;
         }
         else{
-          this.rpc += re;
+          this.rpc = re;
+          print =false;
         }
       }
-      else{this.rpc += re;}
       
+      if(result.includes("ERROR-TLD-CHECKPOINT")){
+        console.log(result);
+      }
+      if(result.includes("A0CHECKPOINT")){
+        console.log(result);
+      }
+      if(print){
+        this.rpc += re;
+      }
       this.hasRes= true;
       this.moreContent = true;
 
@@ -112,10 +124,12 @@ export class ContentComponent implements OnInit {
       recordId: this.angForm.get("recordId")?.value,
       maxEvents: this.angForm.get("maxEvents")?.value,
     }
+    debugger;
     this.requestRunning =true;
     console.log(payload)
     let headers = new HttpHeaders();
-    headers = headers.set('businessDay',this.date);
+    let localDate = this.angForm.get("businessDay")?.value
+    headers = headers.set('businessDay',localDate);
     let url = "http://localhost:1998/api/v1/StldReport"
     this.httpClient.post<string>(url,payload,{headers, responseType: 'text' as 'json' }).subscribe(result=>{
       this.rpc=result;
@@ -129,11 +143,8 @@ export class ContentComponent implements OnInit {
 
   watch(){
     this.rpc = "";
-    this.watchB = true;
-    console.log("OK");
-    
+    this.watchB = true;   
     this.requestRunning =true;
-
     let headers = new HttpHeaders();
     headers = headers.set('businessDay',this.date);
     let url = "http://localhost:1998/api/v1/StldReportReal"

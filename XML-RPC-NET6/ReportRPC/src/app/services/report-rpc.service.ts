@@ -16,8 +16,6 @@ export class ReportRpcService {
 		const sc = StringCodec();
 		for await (const m of this.natsSub) {
 			let message = sc.decode(m.data);
-
-			console.log(`Topic: '${m.subject}' - Message: '${message}'`);
       this.communicationService.pub<string>("rpc",{content:message,sender:"asd"});
 		}
 		console.log("Subscription closed");
